@@ -1,0 +1,8 @@
+[package]
+
+name = "apns-testserver"
+version = "0.0.1"
+authors = ["Alex <alexjsgood@gmail.com>"]
+
+[dependencies.http]
+git = "https://github.com/chris-morgan/rust-http.git"
