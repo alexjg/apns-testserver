@@ -1,4 +1,4 @@
-use serialize::{Encodable, Encoder};
+use serialize::{Encodable, Encoder, Decodable};
 use serialize::hex::{ToHex};
 use std::num::{from_u16};
 use std::io::{Reader};
