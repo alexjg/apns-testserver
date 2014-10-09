@@ -1,16 +1,20 @@
 #![feature(phase)]
 
-extern crate serialize;
 extern crate http;
+extern crate openssl;
+extern crate serialize;
 extern crate time;
 #[phase(plugin, link)] extern crate log;
 
 use http::server::{Config, Server, Request, ResponseWriter};
 use http::headers::content_type::MediaType;
+use http::method::{Delete};
+use openssl::{ssl};
 use serialize::{json};
 use serialize::json::{ToJson};
 use std::comm::{Sender, Receiver};
 use std::io::{Listener, Acceptor};
+use std::path;
 use std::io::net::tcp::{TcpListener, TcpStream};
 use std::io::net::ip::{SocketAddr, Ipv4Addr};
 use std::vec::{Vec};
@@ -38,12 +42,9 @@ impl Server for NotificationHttpServer {
         Config {bind_address: SocketAddr{ip: Ipv4Addr(127, 0, 0, 1), port: 8081}}
     }
 
-    fn handle_request(&self, _r:Request, w: &mut ResponseWriter) {
-        let notifications = self.stateholder_interface.get_state();
-        let as_json = json::encode(&notifications);
+    fn handle_request(&self, request :Request, w: &mut ResponseWriter) {
 
         w.headers.date = Some(time::now_utc());
-        w.headers.content_length = Some(as_json.len());
         w.headers.content_type = Some(MediaType {
             type_: String::from_str("application"),
             subtype: String::from_str("json"),
@@ -51,9 +52,21 @@ impl Server for NotificationHttpServer {
         });
         w.headers.server = Some(String::from_str("Example"));
         w.write_headers();
-        info!("writing {0}", as_json);
-        w.write_line(as_json.as_slice()).unwrap();
-        w.flush().unwrap()
+        match request.method {
+            Delete => {
+                self.stateholder_interface.clear();
+                let message = "{\"status\": \"OK\"}";
+                w.headers.content_length = Some(message.len());
+                w.write_line(message).unwrap();
+            },
+            _ => {
+                let notifications = self.stateholder_interface.get_state();
+                let as_json = json::encode(&notifications);
+                w.headers.content_length = Some(as_json.len());
+                info!("writing {0}", as_json);
+                w.write_line(as_json.as_slice()).unwrap();
+            }
+        };
     }
 
 }
@@ -82,8 +95,15 @@ fn main(){
         spawn(proc() {
             info!("Receiving frame");
             let mut stream = opt_stream.unwrap();
+            let mut ssl_context = ssl::SslContext::new(ssl::Sslv3).unwrap();
+            let cert_path = path::Path::new("/home/alex/temp/selfcert/server.crt");
+            ssl_context.set_certificate_file("/home/alex/temp/selfcert/server.crt", ssl::PEM);
+            ssl_context.set_verify(ssl::SslVerifyNone, None);
+            ssl_context.set_private_key_file("/home/alex/temp/selfcert/server.key", ssl::PEM);
+            let ssl = ssl::Ssl::new(&ssl_context).unwrap();
+            let mut ssl_stream = ssl::SslStream::new_server_from(ssl, stream).unwrap();
             loop {
-                let mut reader: notifications::NotificationReader<TcpStream> = notifications::NotificationReader::new(&mut stream);
+                let mut reader: notifications::NotificationReader<ssl::SslStream<TcpStream>> = notifications::NotificationReader::new(&mut ssl_stream);
                 let notification: notifications::Notification = reader.read_notification().unwrap();
                 info!("Read notification {}", json::encode(&notification));
                 state_holder_interface.add_notification(notification);

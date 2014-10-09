@@ -3,6 +3,7 @@ use notifications;
 pub enum StateHolderCommand{
     GetState(Sender<StateHolderResponse>),
     Append(notifications::Notification),
+    Clear,
 }
 
 pub enum StateHolderResponse{
@@ -30,6 +31,8 @@ impl StateHolder {
                     channel.send(State(self.state.clone())),
                 Append(notification) =>
                     self.state.push(notification),
+                Clear =>
+                    self.state = Vec::new(),
             }
         }
     }
@@ -65,8 +68,11 @@ impl StateHolderInterface {
     }
 
     pub fn add_notification(&self, notification: notifications::Notification) {
-        info!("Notification added");
         self.channel_to_stateholder.send(Append(notification));
+    }
+
+    pub fn clear(&self) {
+        self.channel_to_stateholder.send(Clear);
     }
 
 }
