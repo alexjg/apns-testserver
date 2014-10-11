@@ -13,7 +13,7 @@ use openssl::{ssl};
 use serialize::{json};
 use serialize::json::{ToJson};
 use std::comm::{Sender, Receiver};
-use std::io::{Listener, Acceptor};
+use std::io::{Listener, Acceptor, IoError, IoErrorKind, EndOfFile};
 use std::path;
 use std::io::net::tcp::{TcpListener, TcpStream};
 use std::io::net::ip::{SocketAddr, Ipv4Addr};
@@ -63,7 +63,7 @@ impl Server for NotificationHttpServer {
                 let notifications = self.stateholder_interface.get_state();
                 let as_json = json::encode(&notifications);
                 w.headers.content_length = Some(as_json.len());
-                info!("writing {0}", as_json);
+                info!("returning {0}", as_json);
                 w.write_line(as_json.as_slice()).unwrap();
             }
         };
@@ -104,9 +104,26 @@ fn main(){
             let mut ssl_stream = ssl::SslStream::new_server_from(ssl, stream).unwrap();
             loop {
                 let mut reader: notifications::NotificationReader<ssl::SslStream<TcpStream>> = notifications::NotificationReader::new(&mut ssl_stream);
-                let notification: notifications::Notification = reader.read_notification().unwrap();
-                info!("Read notification {}", json::encode(&notification));
-                state_holder_interface.add_notification(notification);
+                match reader.read_notification(){
+                    Ok(notification) => {
+                        info!("Read notification {}", json::encode(&notification));
+                        state_holder_interface.add_notification(notification);
+                    }
+                    Err(notifications::NotificationReadIoError(io_error)) => match io_error.kind {
+                        EndOfFile => {
+                            info!("End of input, closing");
+                            break;
+                        },
+                        _ => {
+                            info!("Unknown error while reading notificaiton, closing channel");
+                            break;
+                        }
+                    },
+                    _ => {
+                        info!("Unknown error while reading notificaiton, closing channel");
+                        break;
+                    }
+                }
             }
         })
     }
