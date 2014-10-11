@@ -11,12 +11,14 @@ use stateholder;
 #[deriving(Clone)]
 pub struct NotificationHttpServer{
     stateholder_interface: stateholder::StateHolderInterface,
+    address: SocketAddr,
 }
 
 impl NotificationHttpServer {
-    pub fn new(stateholder_interface: stateholder::StateHolderInterface) -> NotificationHttpServer {
+    pub fn new(stateholder_interface: stateholder::StateHolderInterface, address: SocketAddr) -> NotificationHttpServer {
         NotificationHttpServer{
-            stateholder_interface: stateholder_interface
+            stateholder_interface: stateholder_interface,
+            address: address,
         }
     }
 }
@@ -24,7 +26,7 @@ impl NotificationHttpServer {
 impl Server for NotificationHttpServer {
 
     fn get_config(&self) -> Config {
-        Config {bind_address: SocketAddr{ip: Ipv4Addr(127, 0, 0, 1), port: 8081}}
+        Config {bind_address: self.address}
     }
 
     fn handle_request(&self, request :Request, w: &mut ResponseWriter) {

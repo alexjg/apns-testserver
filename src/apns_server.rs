@@ -29,13 +29,15 @@ impl APNSServer {
         println!("Listening started, ready to accept");
         for opt_stream in acceptor.incoming(){
             let state_holder_interface = self.stateholder_interface.clone();
+            let ssl_cert_path = self.ssl_cert_path.clone();
+            let ssl_private_key_path = self.ssl_private_key_path.clone();
             spawn(proc() {
                 info!("Receiving frame");
                 let mut stream = opt_stream.unwrap();
                 let mut ssl_context = ssl::SslContext::new(ssl::Sslv3).unwrap();
-                ssl_context.set_certificate_file("/home/alex/temp/selfcert/server.crt", ssl::PEM);
+                ssl_context.set_certificate_file(ssl_cert_path.clone().as_str().unwrap(), ssl::PEM);
                 ssl_context.set_verify(ssl::SslVerifyNone, None);
-                ssl_context.set_private_key_file("/home/alex/temp/selfcert/server.key", ssl::PEM);
+                ssl_context.set_private_key_file(ssl_private_key_path.clone().as_str().unwrap(), ssl::PEM);
                 let ssl = ssl::Ssl::new(&ssl_context).unwrap();
                 let mut ssl_stream = ssl::SslStream::new_server_from(ssl, stream).unwrap();
                 loop {
