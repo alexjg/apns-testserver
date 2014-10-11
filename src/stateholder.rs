@@ -17,11 +17,14 @@ pub struct StateHolder{
 
 
 impl StateHolder {
-    pub fn new(port: Receiver<StateHolderCommand>) -> StateHolder {
-        StateHolder{
+    pub fn new() -> (StateHolder, StateHolderInterface) {
+        let (channel, port) = channel::<StateHolderCommand>();
+        let state_holder = StateHolder{
             port: port,
             state: Vec::new(),
-        }
+        };
+        let state_holder_interface = StateHolderInterface::new(channel);
+        return (state_holder, state_holder_interface);
     }
 
     pub fn start(&mut self) {

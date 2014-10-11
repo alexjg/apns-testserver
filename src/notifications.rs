@@ -1,6 +1,5 @@
-use serialize;
-use serialize::json::{JsonObject, Json};
-use serialize::{Encodable, Encoder, Decodable};
+use serialize::json::{Json};
+use serialize::{Encodable, Encoder};
 use serialize::hex::{ToHex};
 use std::num::{from_u16};
 use std::io::{Reader, IoError};
@@ -33,14 +32,6 @@ pub struct Notification {
     expiration_date: u32,
     priority: u8,
 }
-
-//impl <S: Encode<E>, E> Encodable<(), E> for Notification {
-    //fn encode(&self, encoder: &mut S) -> Result<(), E> {
-        //encoder.emit_struct("notification", 0, |encoder| {
-            //try!(encoder.emit_struct_field
-        //})
-    //}
-//}
 
 pub enum NotificationReadError {
     NotificationReadIoError(IoError),
