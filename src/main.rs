@@ -9,7 +9,7 @@ extern crate getopts;
 
 use http::server::{Server};
 use std::io::net::ip::{SocketAddr, IpAddr};
-use getopts::{reqopt, optopt, getopts};
+use getopts::{reqopt, optopt, getopts, usage};
 use std::os;
 
 mod notifications;
@@ -35,7 +35,7 @@ fn main(){
 
     let matches = match getopts(args.tail(), opts) {
         Ok(m) => m,
-        Err(f) => { fail!(f.to_string())}
+        Err(f) => { fail!(usage("Usage: ", opts))}
     };
 
     let apns_ip: IpAddr = from_str(matches.opt_str("h").unwrap_or(String::from_str("127.0.0.1")).as_slice()).expect(
