@@ -4,6 +4,7 @@ A simple server which parses APNS requests and exposes a ReST interface to notif
 
 ##Usage:
 
+```
 Options:
     -h --anps-host APNS SERVER
                         The ip address the apns server will be available on,
@@ -21,6 +22,7 @@ Options:
                         Path to the ssl certificate to use
     --private-key-path SSL PRIVATE KEY
                         Path to the ssl private key to use
+```
 
 
 ##Rest Interface
