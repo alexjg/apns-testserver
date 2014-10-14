@@ -35,7 +35,11 @@ fn main(){
 
     let matches = match getopts(args.tail(), opts) {
         Ok(m) => m,
-        Err(f) => { fail!(usage("Usage: ", opts))}
+        Err(f) => {
+            println!("Invalid arguments");
+            println!("Mock APNS Server: {}", usage("", opts));
+            return;
+        }
     };
 
     let apns_ip: IpAddr = from_str(matches.opt_str("h").unwrap_or(String::from_str("127.0.0.1")).as_slice()).expect(
@@ -68,8 +72,10 @@ fn main(){
 
     let addr: SocketAddr = SocketAddr{ip: apns_ip, port: apns_port};
     let apns_server = apns_server::APNSServer::new(addr, stateholder_interface.clone(), ssl_cert_path, ssl_private_key_path);
-    let result = apns_server.start();
-    if result.is_err(){
-        fail!("failed to bind to apns server address");
-    }
+    spawn(proc() {
+        let result = apns_server.start();
+        if result.is_err(){
+            fail!("failed to bind to apns server address");
+        }
+    });
 }
