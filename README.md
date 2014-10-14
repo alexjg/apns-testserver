@@ -2,6 +2,13 @@
 
 A simple server which parses APNS requests and exposes a ReST interface to notifications it has received.
 
+
+##Building
+
+Install cargo and then run
+
+`cargo build`
+
 ##Usage:
 
 ```
